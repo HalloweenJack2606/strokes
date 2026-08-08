@@ -1,3 +1,4 @@
 #pragma once
+#include "core.h"
 
-const char* get_focused_app_name();
+String get_focused_app_name();

@@ -19,6 +19,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 # LIBS
 target_link_libraries(${PROJECT_NAME}
 	"-framework Cocoa"
+	"-framework ApplicationServices"  # AXIsProcessTrusted*
+	"-framework IOKit"                # IOHIDCheckAccess/RequestAccess
 )
 
 # PROPERTIES
