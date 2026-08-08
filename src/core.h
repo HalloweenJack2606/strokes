@@ -1,5 +1,6 @@
 #pragma once
 
+#include "stl/platform.h"
 #include "stl/str.h"
 #include "stl/string_id.h"
 #include "stl/optional.h"

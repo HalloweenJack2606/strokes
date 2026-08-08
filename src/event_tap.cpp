@@ -1,5 +1,6 @@
 #include "core.h"
 #include "event_tap.h"
+#include "macros.h"
 #include <ApplicationServices/ApplicationServices.h>
 #include <dispatch/dispatch.h>
 #include <unistd.h>
@@ -42,13 +43,15 @@ CGEventRef on_event(CGEventTapProxy proxy, CGEventType type, CGEventRef event, v
 		return event;
 	}
 
-	if(CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode) == 96)
+	uint16 keycode = CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
+
+	if(has_macro_for(keycode))
 	{
 		// @note: run off the tap thread so the os dont kill us
 		dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INTERACTIVE, 0), ^{
-			type_text("echo hello from strokes");
-			usleep(20 * 1000); // @note: let chars commit before return
-			press_key(36);
+				run_command(keycode);
+				usleep(20 * 1000); // @note: let chars commit before return
+				press_key(36);
 		});
 		return NULL;
 	}

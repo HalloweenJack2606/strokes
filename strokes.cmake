@@ -3,11 +3,13 @@ set(SOURCE_BASE_DIR ${CMAKE_CURRENT_LIST_DIR})
 file(GLOB_RECURSE CSources "src/**.cpp")
 file(GLOB_RECURSE HSources "src/**.h")
 file(GLOB_RECURSE ObjSources "src/**.mm")
+file(GLOB_RECURSE VendorSources "vendor/**.cpp")
 
 add_executable(${PROJECT_NAME}
         ${CSources}
         ${HSources}
 		${ObjSources}
+		${VendorSources}
 )
 
 # INCLUDES
