@@ -1,0 +1,70 @@
+#include "core.h"
+#include "event_tap.h"
+#include <ApplicationServices/ApplicationServices.h>
+#include <dispatch/dispatch.h>
+#include <unistd.h>
+
+void type_text(const char* s)
+{
+	UniChar buf[256];
+	UniCharCount n = 0;
+	while(s[n] && n < 256) { buf[n] = (UniChar)(unsigned char)s[n]; ++n; }
+
+	CGEventRef down = CGEventCreateKeyboardEvent(NULL, 0, true);
+	CGEventKeyboardSetUnicodeString(down, n, buf);
+	CGEventPost(kCGHIDEventTap, down);
+	CFRelease(down);
+
+	CGEventRef up = CGEventCreateKeyboardEvent(NULL, 0, false);
+	CGEventKeyboardSetUnicodeString(up, n, buf);
+	CGEventPost(kCGHIDEventTap, up);
+	CFRelease(up);
+}
+
+void press_key(CGKeyCode key)
+{
+	CGEventRef down = CGEventCreateKeyboardEvent(NULL, key, true);
+	CGEventPost(kCGHIDEventTap, down);
+	CFRelease(down);
+
+	CGEventRef up = CGEventCreateKeyboardEvent(NULL, key, false);
+	CGEventPost(kCGHIDEventTap, up);
+	CFRelease(up);
+}
+
+CGEventRef on_event(CGEventTapProxy proxy, CGEventType type, CGEventRef event, void* user_info)
+{
+	// @note: check if os killed tap first
+	if(type == kCGEventTapDisabledByTimeout || type == kCGEventTapDisabledByUserInput)
+	{
+		CFMachPortRef tap = *(CFMachPortRef*)user_info;
+		CGEventTapEnable(tap, true);
+		return event;
+	}
+
+	if(CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode) == 96)
+	{
+		// @note: run off the tap thread so the os dont kill us
+		dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INTERACTIVE, 0), ^{
+			type_text("echo hello from strokes");
+			usleep(20 * 1000); // @note: let chars commit before return
+			press_key(36);
+		});
+		return NULL;
+	}
+
+	return event;
+}
+
+void create_event_tap()
+{
+	CFMachPortRef tap = CGEventTapCreate(kCGSessionEventTap, kCGHeadInsertEventTap, kCGEventTapOptionDefault, CGEventMaskBit(kCGEventKeyDown), on_event, &tap);
+
+	mc_panic("failed to create tap", tap != NULL);
+
+	CFRunLoopSourceRef ref = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0);
+	CGEventTapEnable(tap, true);
+	CFRunLoopAddSource(CFRunLoopGetCurrent(), ref, kCFRunLoopCommonModes);
+	println("tap installed, listening...");
+	CFRunLoopRun();
+}
