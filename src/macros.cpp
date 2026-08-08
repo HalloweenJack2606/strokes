@@ -1,6 +1,5 @@
 #include "macros.h"
 #include "keycodes.h"
-#include "event_tap.h"
 #include "apple_utils.h"
 
 #include "toml/toml.hpp"
@@ -48,22 +47,14 @@ void load_macros()
 	print_macros();
 }
 
-bool has_macro_for(uint16 keycode)
+const Macro_Def* find_macro(uint16 keycode)
 {
 	String focused_app = get_focused_app_name();
-
 	auto id = sid(format("{}-{}", focused_app, keycode));
+
 	auto it = table_find(macros, id);
-	return it != end(macros);
-}
+	if(it == end(macros))
+		return nullptr;
 
-void run_command(uint16 keycode)
-{
-	String focused_app = get_focused_app_name();
-	auto id = sid(format("{}-{}", focused_app, keycode));
-	Macro_Def def = macros[id];
-	if(focused_app != def.app_name)
-		return;
-	
-	type_text(get_data(def.command));
+	return &it->second;
 }

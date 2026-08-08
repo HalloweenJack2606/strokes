@@ -1,0 +1,15 @@
+[[macro]]
+app_name = "Termius"
+keycode = "F5"
+command = "cd ./build && ./compile.sh && cd .."
+
+[[macro]]
+app_name = "Termius"
+keycode = "F6"
+command = "cd ./build && ./run.sh && cd .."
+
+[[macro]]
+app_name = "Termius"
+keycode = "F7"
+command = "cd ./build && ./compile.sh && ./run.sh && cd .."
+

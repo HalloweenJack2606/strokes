@@ -1,9 +1,11 @@
 #include "core.h"
 #include "event_tap.h"
 #include "macros.h"
+#include "keycodes.h"
 #include <ApplicationServices/ApplicationServices.h>
 #include <dispatch/dispatch.h>
 #include <unistd.h>
+#include <cstdlib>
 
 void type_text(const char* s)
 {
@@ -45,11 +47,19 @@ CGEventRef on_event(CGEventTapProxy proxy, CGEventType type, CGEventRef event, v
 
 	uint16 keycode = CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
 
-	if(has_macro_for(keycode))
+	// @hack: emergency kill switch Ctrl+Opt+Cmd+Q always exits
+	const CGEventFlags hyper = kCGEventFlagMaskControl | kCGEventFlagMaskAlternate | kCGEventFlagMaskCommand;
+	if((CGEventGetFlags(event) & hyper) == hyper && keycode == keycode_from_name("Q"))
 	{
-		// @note: run off the tap thread so the os dont kill us
+		println("strokes: emergency quit");
+		exit(0);
+	}
+
+	if(const Macro_Def* m = find_macro(keycode))
+	{
+		const char* command = get_data(m->command);
 		dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INTERACTIVE, 0), ^{
-				run_command(keycode);
+				type_text(command);
 				usleep(20 * 1000); // @note: let chars commit before return
 				press_key(36);
 		});
